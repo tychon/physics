@@ -341,6 +341,29 @@ def test_exp():
     test_model(f, (a,b,c), xbase,
                0.3 * pq.s, 0.3 * pq.nm)
 
+def test_chi2(N=300, n=101,
+              xerr=None, #0.2*pq.s,
+              yerr=0.1*pq.nm):
+    a = 10 * pq.nm / pq.s
+    b = 5 * pq.nm
+    def f(xs, a, b):
+        return xs * a + b
+    chi2rs = []
+    print("Chi2_red distribution")
+    print("    Fitting %d points %d times, ..."%(n, N))
+    xbase = np.linspace(0, 50, n) * pq.s
+    for i in range(N):
+        xdata, ydata = draw_samples(f, xbase, (a,b), xerr=xerr, yerr=yerr)
+        pinit = [p * random.normal(1, 0.1) for p in (a, b)]
+        param, std, info = fit(f, xdata, ydata, pinit,
+                               yerr=yerr, xerr=xerr,
+                               pprint=False)
+        chi2rs.append(info['res_var'])
+    chi2rs = np.array(chi2rs)
+    print("    Mean:",np.mean(chi2rs))
+    print("    Std dev:",np.std(chi2rs))
+
 if __name__ == '__main__':
-    test_linear()
-    test_exp()
+    test_chi2(n=100)
+    #test_linear()
+    #test_exp()

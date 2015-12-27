@@ -72,8 +72,8 @@ def fmtuncert(value, uncert=None,
             value / 10**power,
             uncert / 10**power,
             decimals, pm)
-    if uncert is not None and (power != 0 or paren):
-        num = "("+num+")"
+        if power != 0 or paren:
+            num = "("+num+")"
     if power != 0:
         if tex: fmt = "{}{}{{{:d}}}"
         else: fmt = "{}{}{:d}"
