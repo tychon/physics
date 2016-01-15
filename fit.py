@@ -16,7 +16,7 @@ import scipy.optimize as opt
 import scipy.odr as odr
 import scipy.stats as stats
 
-from fmt import *
+from physics.fmt import *
 
 # see http://stackoverflow.com/a/21844726
 def bootstrap(fun, p0, xdata, ydata,
@@ -135,11 +135,11 @@ def fit(fun, xdata, ydata, p0,
     if isinstance(xdata, pq.Quantity):
         xunits = xdata.units
         xdata = xdata.magnitude
-    else: xunits = pq.dimensionless
+    else: xunits = 1 * pq.dimensionless
     if isinstance(ydata, pq.Quantity):
         yunits = ydata.units
         ydata = ydata.magnitude
-    else: yunits = pq.dimensionless
+    else: yunits = 1 * pq.dimensionless
     if xerr is not None:
         if isinstance(xerr, pq.Quantity):
             xerr = xerr.rescale(xunits).magnitude
@@ -163,8 +163,8 @@ def fit(fun, xdata, ydata, p0,
 
     # fit
     if pprint:
-        print("Fitting %s depending on %s"%(repr(yunits)[13:],
-                                            repr(xunits)[13:]))
+        print("Fitting [%s] depending on [%s]"%(repr(yunits)[13:],
+                                                repr(xunits)[13:]))
         print("    N=%d, params=%d, dof=%d"%(n, len(p0), dof))
     params = None # estimated parameters
     std = None    # standard deviation
