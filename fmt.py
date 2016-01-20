@@ -1,5 +1,5 @@
 
-__all__ = ['fmtuncert', 'fmtquant',
+__all__ = ['fmtuncert', 'fmtquant', 'fmtquant_vec',
            'fmttable', 'printtable',
            'printtex']
 
@@ -14,7 +14,8 @@ import os
 def _isnum(val):
     return type(val) == int \
                or type(val) == float \
-               or type(val) == complex
+               or type(val) == complex \
+               or hasattr(val, 'shape') and val.shape == ()
 
 def _isquant(val):
     return isinstance(val, pq.Quantity) \
@@ -175,10 +176,20 @@ def fmtquant(quant, *args, **kwargs):
     assert len(args) < 9, "`paren` can only be keyword argument."
     paren = kwargs.pop('paren', False) or unit
     s = fmtuncert(value, uncert, *args, paren=paren, **kwargs)
-    if unit and quant.dimensionality != pq.dimensionless:
+    if unit and _isquant(quant) and quant.dimensionality != pq.dimensionless:
         if tex: s = s + ' ' + quant.dimensionality.latex[1:-1]
         else: s = s + ' ' + repr(quant.units)[13:]
     return s
+
+# TODO
+def fmtquant_vec(quants, uncerts, **kwargs):
+    if not isinstance(quants, np.ndarray):
+        raise ValueError("Expected array as `quants`")
+    if not _isquant(quants) or uncerts is not None and not _isquant(uncerts):
+        raise ValueError("Expected Quantities as input")
+    if not isinstance(quants, np.ndarray):
+        uncerts = np.array([uncerts] * len(quants))
+    return list(fmtquant(q, u) for q,u in zip(quants, uncerts))
 
 
 ################################################################################
@@ -220,7 +231,7 @@ def _fmt_number_column(info, nanempty,
     col = []
     for v, u in zip(values, uncert):
         f = fmtuncert(v, u, decimals,
-                      power, signific,
+                      power, significance,
                       pm=r" \pm ", tex=True,
                       nanempty=nanempty)
         col.append('$' + f + '$')
@@ -228,7 +239,7 @@ def _fmt_number_column(info, nanempty,
 
 def fmttable(columns, caption="", tableno=1,
              columnformat=None, index=[],
-             nanempty=True):
+             nanempty=True, info=True):
     """Format data as tex threeparttable.
       Table will have the same length as the longest column.
 
@@ -274,15 +285,15 @@ def fmttable(columns, caption="", tableno=1,
     # format cells to strings
     fmtcols = []
     for coli, data in enumerate(columns):
-        heading = col[0]
-        if 2 <= len(col) <= 3:
+        heading = data[0]
+        if 2 <= len(data) <= 3:
             col = _fmt_obj_column(*data)
-        elif 4 <= len(col) <= 6:
+        elif 4 <= len(data) <= 6:
             col = _fmt_number_column(info, nanempty, *data)
         else:
             raise ValueError("Bad tuple for column %d"%(coli+1))
-        if len(col) < length:
-            col.extend([""]*(length-len(col)))
+        if len(data) < rown:
+            col.extend([""]*(rown-len(data)))
         fmtcols.append(col)
 
     # build string
