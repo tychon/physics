@@ -201,7 +201,7 @@ def _fmt_obj_column(header, values, fun=None):
     return col
 
 def _fmt_number_column(info, nanempty,
-                       header, values, uncert, decimals,
+                       heading, values, uncert, decimals,
                        power=0, significance=None):
     # remove units
     if _isquant(values):
