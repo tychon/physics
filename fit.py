@@ -143,13 +143,13 @@ def fit(fun, xdata, ydata, p0,
     if xerr is not None:
         if isinstance(xerr, pq.Quantity):
             xerr = xerr.rescale(xunits).magnitude
-        assert len(np.shape(xerr)) == 0 or np.shape(xerr) == (len(xdata))
+        assert len(np.shape(xerr)) == 0 or np.shape(xerr) == (len(xdata),)
         if np.amin(xerr) <= 0:
             raise ValueError("Zeros / neg values in x-uncert not allowed")
     if yerr is not None:
         if isinstance(yerr, pq.Quantity):
             yerr = yerr.rescale(yunits).magnitude
-        assert len(np.shape(yerr)) == 0 or np.shape(yerr) == (len(ydata))
+        assert len(np.shape(yerr)) == 0 or np.shape(yerr) == (len(ydata),)
         if np.amin(yerr) <= 0:
             raise ValueError("Zeros / neg values in y-uncert not allowed")
     p0 = [p if isinstance(p, pq.Quantity) else p * pq.dimensionless
