@@ -11,6 +11,11 @@ import quantities as pq
 import subprocess
 import os
 
+# for displaying images in jupyter
+import wand.image
+import IPython.display
+from wand.image import Image as WImage
+
 def _isnum(val):
     return type(val) == int \
                or type(val) == float \
@@ -336,6 +341,8 @@ def printtable(columns, caption="", tableno=1, name=None,
     tab = fmttable(columns, caption, tableno, columnformat, index)
     if name is None: name = "table{}".format(tableno)
     printtex(name, tab)
+    showtable(name)
+    return name
 
 def printtex(name, tex):
     """Put tex into file surrounded by some document definitions.
@@ -359,7 +366,8 @@ def printtex(name, tex):
 \documentclass[a4paper]{scrartcl}
 \usepackage{microtype, lmodern, ngerman}
 \usepackage{amsmath, esvect, booktabs, threeparttable}
-\begin{document}"""+NL)
+\begin{document}
+\pagestyle{empty}"""+NL)
         f.write(tex)
         f.write(NL+r"\end{document}"+NL)
 
@@ -376,3 +384,20 @@ def printtex(name, tex):
         os.unlink(name+'.tex')
         os.unlink(name+'.aux')
         return True
+
+def showtable(name, margins=[10, 10, 10, 10]):
+    pdffile = name + '.pdf'
+    cropfile = name + '.cropped.pdf'
+    margins = ' '.join(str(m) for m in margins)
+    try:
+        proc = subprocess.Popen(['pdfcrop', '--margins', margins,
+                                 pdffile, cropfile])
+        proc.communicate()
+    except FileNotFoundError as e:
+        print('ERROR: pdfcrop not found, cannot display table in notebook')
+    res = proc.returncode
+    if res != 0:
+        print("Cropping failed, return code: %d"%res)
+    else:
+        with wand.image.Image(filename=cropfile) as img:
+            IPython.display.display(img)
