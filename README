@@ -1,0 +1,15 @@
+
+This is a package with helper functions for working with quantities
+and formatting uncertain values.
+
+Install a local development copy with
+
+    $ python3 setup.py develop --user
+
+this will install an egg-file into your local package site.  That
+egg-file links to this repository.  Therefore all changes will be
+reflected in imports directly.
+
+To uninstall run
+
+    $ pip3 uninstall physics
