@@ -4,9 +4,9 @@ setup(name='physics',
       version='0.1',
       description='Some helper functions for fitting with quantities and'
                   'formatting uncertainties.',
-      url='http://tychons.net/gitweb/?p=physics.git;a=tree',
+      url='https://github.com/tychon/physics',
       author='Hannes Riechert',
-      author_email='tychon@tychons.net',
+      author_email='hannes@tychons.net',
       license='MIT',
       packages=['physics'],
       zip_safe=False)
