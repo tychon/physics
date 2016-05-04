@@ -237,8 +237,8 @@ def _fmt_number_column(info, nanempty,
     for v, u in zip(values, uncert):
         f = fmtuncert(v, u, decimals,
                       power, significance,
-                      pm=r" \pm ", tex=True,
-                      nanempty=nanempty)
+                      pm=r" \pm ", ten='\cdot 10',
+                      tex=True, nanempty=nanempty)
         col.append('$' + f + '$')
     return col
 
@@ -386,6 +386,15 @@ def printtex(name, tex):
         return True
 
 def showtable(name, margins=[10, 10, 10, 10]):
+    """Crop the pages of a PDF file, then load it using ImageMagick
+      (python wand) and display it in IPython / Jupyter.
+
+      Arguments:
+        name: basename of file.  The function looks for a file named
+            `basename.pdf` and creates a file named `basename.cropped.pdf`.
+        margins: A list or tuple of four integers giving the margins around the
+            text in points ('pt').
+    """
     pdffile = name + '.pdf'
     cropfile = name + '.cropped.pdf'
     margins = ' '.join(str(m) for m in margins)

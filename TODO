@@ -1,7 +1,7 @@
 
-* show \cdot in fmt with power
-
 ## fmt
+
+* vectorized version of fmtquant
 
 * plotting convenience function with DIN A4 size
 
