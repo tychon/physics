@@ -1,4 +1,6 @@
 
+* attribute authors of datacursors
+
 ## fmt
 
 * vectorized version of fmtquant
