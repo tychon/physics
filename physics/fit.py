@@ -86,12 +86,14 @@ def autofit(fun, xdata, ydata, p0,
     if len(ydata) != len(xdata):
         raise FitError("xdata and ydata are not of same length")
     if xerr is not None:
-        if not np.isscalar(xerr) and np.shape(xerr) != np.shape(xdata):
+        if not np.isscalar(xerr) and xerr.shape != () \
+           and np.shape(xerr) != np.shape(xdata):
             raise FitError("xerr not of same shape as xdata")
         if np.min(xerr) <= 0:
             raise FitError("xerr contains data points <= 0")
     if yerr is not None:
-        if not np.isscalar(yerr) and np.shape(yerr) != np.shape(ydata):
+        if not np.isscalar(yerr) and yerr.shape != () \
+           and np.shape(yerr) != np.shape(ydata):
             raise FitError("yerr not of same shape as ydata")
         if np.min(yerr) <= 0:
             raise FitError("yerr contains data points <= 0")
@@ -113,7 +115,7 @@ def autofit(fun, xdata, ydata, p0,
     if dof <= 0:
         raise FitError("degrees of freedem <= 0")
 
-    if not xerr:
+    if xerr is None:
         info['method'] = 'curve_fit'
         kwargs = {}
         if bounds:
@@ -140,7 +142,7 @@ def autofit(fun, xdata, ydata, p0,
                                       / yerr**2) / dof)
             info['pcov'] = pcov
             std = np.array([np.sqrt(pcov[i][i]) for i in range(len(p0))])
-    elif not bounds: # xerr and optional yerr
+    elif bounds is None: # xerr and optional yerr
         info['method'] = 'odr'
         # change function signature
         def odrf(B, x):
