@@ -134,7 +134,7 @@ def autofit(fun, xdata, ydata, p0,
         try:
             params, pcov, fullout, msg, ier =\
                 opt.curve_fit(fun, xdata, ydata, p0,
-                            sigma=yerr, #absolute_sigma=True,
+                            sigma=yerr, absolute_sigma=True,
                             full_output=1)
         except RuntimeError as e:
             info['success'] = False
@@ -316,7 +316,7 @@ def fitquant(fun, xdata, ydata, p0,
         if params and std:
             print("    Parameters:")
             for n,p,s in zip(paramnames, params, std):
-                print("      {:s}: {:s}".format(n, fmtquant(p, s, unit=True)))
+                print("      {:s}: {:s}".format(n, fmtquant(p, s)))
     if full_output:
         return params, std, info
     else:

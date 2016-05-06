@@ -1,7 +1,14 @@
 
 * attribute authors of datacursors
 
+* does quantities support ndarrays in UncertainQuantity?
+
 ## fmt
+
+* consistent handling of 10000 and 9999.99 (automatic scaling of
+   power)
+
+* make language configurable in table caption ('Tabelle 1')
 
 * vectorized version of fmtquant
 
@@ -10,6 +17,8 @@
 * helper function for plotting fit result?
 
 ## fit
+
+* inverse_fitquant
 
 * use scipy.optimize.least_squares instead of minimize with bounds?
 

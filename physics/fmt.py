@@ -1,7 +1,6 @@
 
 __all__ = ['fmtuncert', 'fmtquant', 'fmtquant_vec',
-           'fmttable', 'printtable',
-           'printtex']
+           'fmttable', 'printtable', 'showtable']
 
 import io
 import math
@@ -11,10 +10,17 @@ import quantities as pq
 import subprocess
 import os
 
-# for displaying images in jupyter
-import wand.image
-import IPython.display
-from wand.image import Image as WImage
+# Imports for displaying images in Jupyter.
+# We can't use MathJax, since it only supports math environments
+inlinetables = True
+try:
+  import wand.image
+  import IPython.display
+except ImportError:
+    inlinetables = False
+    import warnings
+    warnings.warn("The wand module could not be imported."
+                  " You won't see tables inlined in your notebook.")
 
 def _isnum(val):
     return type(val) == int \
@@ -34,7 +40,7 @@ def _isweird(val):
 logten = math.log(10.0)
 def fmtuncert(value, uncert=None,
               decimals=None, power=None, significance=None,
-              pm=' +- ', ten=' 10^', tex=False, paren=False,
+              pm=' +- ', ten=' 10**', tex=False, paren=False,
               nanempty=False):
     """Format integer / floating point values with uncertainty.
       Does not work with numpy arrays (use `numpy.vectorize`).
@@ -137,7 +143,7 @@ def fmtquant(quant, *args, **kwargs):
       arguments that fmtuncert takes.
 
       Additional arguments:
-        unit: Set True to append unit (will make parentheses around
+        units: Set True to append units (will make parentheses around
             values).  Formats as tex formula if `tex=True` is set.
             Defaults to True.
 
@@ -149,7 +155,7 @@ def fmtquant(quant, *args, **kwargs):
             have a built-in python number type.
     """
     tex = kwargs.get('tex', False)
-    unit = kwargs.pop('unit', True)
+    units = kwargs.pop('units', True)
     # value
     quant = 1.0 * quant
     if not _isquant(quant) and not _isnum(quant):
@@ -179,9 +185,9 @@ def fmtquant(quant, *args, **kwargs):
         uncert = None
     # fmt
     assert len(args) < 9, "`paren` can only be keyword argument."
-    paren = kwargs.pop('paren', False) or unit
+    paren = kwargs.pop('paren', False) or units
     s = fmtuncert(value, uncert, *args, paren=paren, **kwargs)
-    if unit and _isquant(quant) and quant.dimensionality != pq.dimensionless:
+    if units and _isquant(quant) and quant.dimensionality != pq.dimensionless:
         if tex: s = s + ' ' + quant.dimensionality.latex[1:-1]
         else: s = s + ' ' + repr(quant.units)[13:]
     return s
@@ -334,14 +340,18 @@ def fmttable(columns, caption="", tableno=1,
     return s.getvalue()
 
 def printtable(columns, caption="", tableno=1, name=None,
-                columnformat=None, index=[]):
-    """Shorthand for formatting and printing table.
+               columnformat=None, index=[],
+               margins=[10, 10, 10, 10], keepcropped=False):
+    """Shorthand for formatting and printing table.  See documentation of
+      `fmttable()`, `printtex()` and `showtable()`.
+
       `name` defaults to 'tableTABLENO.pdf'.
     """
     tab = fmttable(columns, caption, tableno, columnformat, index)
     if name is None: name = "table{}".format(tableno)
-    printtex(name, tab)
-    showtable(name)
+    if not printtex(name, tab):
+        return name
+    showtable(name, margins, keepcropped)
     return name
 
 def printtex(name, tex):
@@ -385,7 +395,8 @@ def printtex(name, tex):
         os.unlink(name+'.aux')
         return True
 
-def showtable(name, margins=[10, 10, 10, 10]):
+def showtable(name, margins=[10, 10, 10, 10],
+              keepcropped=False):
     """Crop the pages of a PDF file, then load it using ImageMagick
       (python wand) and display it in IPython / Jupyter.
 
@@ -395,6 +406,8 @@ def showtable(name, margins=[10, 10, 10, 10]):
         margins: A list or tuple of four integers giving the margins around the
             text in points ('pt').
     """
+    if not keepcropped and not inlinetables:
+        return # Nothing to do
     pdffile = name + '.pdf'
     cropfile = name + '.cropped.pdf'
     margins = ' '.join(str(m) for m in margins)
@@ -407,6 +420,9 @@ def showtable(name, margins=[10, 10, 10, 10]):
     res = proc.returncode
     if res != 0:
         print("Cropping failed, return code: %d"%res)
-    else:
+        return
+    if inlinetables:
         with wand.image.Image(filename=cropfile) as img:
             IPython.display.display(img)
+    if not keepcropped:
+        os.unlink(cropfile)
