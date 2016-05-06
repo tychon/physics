@@ -3,6 +3,9 @@
 
 * does quantities support ndarrays in UncertainQuantity?
 
+* standard errors of minimize algorithms
+  (see curve_fit implementation)
+
 ## fmt
 
 * consistent handling of 10000 and 9999.99 (automatic scaling of

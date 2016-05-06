@@ -1,5 +1,6 @@
 
 __all__ = ['fmtuncert', 'fmtquant', 'fmtquant_vec',
+           'comparequant',
            'fmttable', 'printtable', 'showtable']
 
 import io
@@ -201,6 +202,28 @@ def fmtquant_vec(quants, uncerts, **kwargs):
     if not isinstance(quants, np.ndarray):
         uncerts = np.array([uncerts] * len(quants))
     return list(fmtquant(q, u) for q,u in zip(quants, uncerts))
+
+def comparequant(values1, values2, uncerts1=None, uncerts2=None):
+    if uncerts1 is None:
+        uncerts1 = [None]*len(values1)
+    if uncerts2 is None:
+        uncerts2 = [None]*len(values2)
+    deviations = []
+    rows = [] # formatted strings [(val1, val2, dev)]
+    for v1, v2, u1, u2 in zip(values1, values2, uncerts1, uncerts2):
+        v2.rescale(v1.units)
+        if u1 is None: u1 = 1*v1.units
+        if u2 is None: u2 = 1*v2.units
+        dev = (v2 - v1) / np.sqrt(u1**2 + u2**2)
+        deviations.append(dev)
+        rows.append( (fmtquant(v1, u1), fmtquant(v2, u2), fmtquant(dev)) )
+    # maximum fmtd string lengths per column
+    col1 = max(len(s1) for s1, s2, s3 in rows)
+    col2 = max(len(s2) for s1, s2, s3 in rows)
+    col3 = max(len(s3) for s1, s2, s3 in rows)
+    for s1, s2, s3 in rows:
+        print(s1.rjust(col1)+' | '+s2.rjust(col2)+' | '+s3.rjust(col3))
+    return deviations
 
 
 ################################################################################
