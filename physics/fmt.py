@@ -203,7 +203,21 @@ def fmtquant_vec(quants, uncerts, **kwargs):
         uncerts = np.array([uncerts] * len(quants))
     return list(fmtquant(q, u) for q,u in zip(quants, uncerts))
 
-def comparequant(values1, values2, uncerts1=None, uncerts2=None):
+def comparequant(values1, values2,
+                 uncerts1=None, uncerts2=None,
+                 names=None):
+    """Print out values und deviations between them.
+
+      Arguments:
+        values1, values2: lists of quantities where each n-th element is
+            values1 has the same unit-dimension as in values2.
+        uncerts1, uncerts2: standard deviations for values1 and values2.
+            Default to zero when None.
+        names: optional list of names for each row.
+
+      Returns:
+        A list of (dimensionless) deviations.
+    """
     if uncerts1 is None:
         uncerts1 = [None]*len(values1)
     if uncerts2 is None:
@@ -212,17 +226,26 @@ def comparequant(values1, values2, uncerts1=None, uncerts2=None):
     rows = [] # formatted strings [(val1, val2, dev)]
     for v1, v2, u1, u2 in zip(values1, values2, uncerts1, uncerts2):
         v2.rescale(v1.units)
-        if u1 is None: u1 = 1*v1.units
-        if u2 is None: u2 = 1*v2.units
-        dev = (v2 - v1) / np.sqrt(u1**2 + u2**2)
+        if u1 is None: u1 = 0*v1.units
+        if u2 is None: u2 = 0*v2.units
+        dev = np.abs((v2 - v1)) / np.sqrt(u1**2 + u2**2)
         deviations.append(dev)
         rows.append( (fmtquant(v1, u1), fmtquant(v2, u2), fmtquant(dev)) )
+    if names is None:
+        names = ['']*len(rows)
     # maximum fmtd string lengths per column
+    col0 = max(len(name) for name in names)
     col1 = max(len(s1) for s1, s2, s3 in rows)
     col2 = max(len(s2) for s1, s2, s3 in rows)
     col3 = max(len(s3) for s1, s2, s3 in rows)
-    for s1, s2, s3 in rows:
-        print(s1.rjust(col1)+' | '+s2.rjust(col2)+' | '+s3.rjust(col3))
+    if col0:
+        for n, (s1, s2, s3) in zip(names, rows):
+            print(n.rjust(col0)+' | '+s1.rjust(col1)+' | '
+                  +s2.rjust(col2)+' | '+s3.rjust(col3)+' \u03C3')
+    else:
+        for s1, s2, s3 in zip(names, rows):
+            print(s1.rjust(col1)+' | '+s2.rjust(col2)
+                  +' | '+s3.rjust(col3)+' \u03C3')
     return deviations
 
 
