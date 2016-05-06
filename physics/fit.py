@@ -69,7 +69,7 @@ def autofit(fun, xdata, ydata, p0,
             'res_var': residual variance / reduced chi-squared
             'probability': probability of fit according to
                 chi-squared distribution
-            'cov' (optional): the covariance matrix as ndarray
+            'pcov' (optional): the covariance matrix as ndarray
             'out' (optional): the full output of the used algorithm
 
       Raises:
@@ -99,6 +99,10 @@ def autofit(fun, xdata, ydata, p0,
         if len(bounds) != len(p0):
             raise FitError("The number of bounds does not match the number"
                            " of parameters.")
+        # rewrite bounds for curve_fit
+        mins = np.array([b[0] for b in bounds])
+        maxs = np.array([b[1] for b in bounds])
+        bounds = mins, maxs
 
     n = len(xdata)    # number of data points
     dof = n - len(p0) # degrees of freedom
@@ -109,43 +113,32 @@ def autofit(fun, xdata, ydata, p0,
     if dof <= 0:
         raise FitError("degrees of freedem <= 0")
 
-    if not bounds and xerr is None and yerr is None:
-        info['method'] = 'leastsq'
-        errfunc = lambda p, x, y: y - fun(x, *p)
-        params, pcov, fullout, msg, ier =\
-            opt.leastsq(errfunc, p0,
-                        args=(xdata, ydata),
-                        full_output=1)
-        info['out'] = fullout
-        info['message'] = msg
-        if not (1 <= ier <= 4):
-            info['success'] = False
-        else:
-            info['success'] = pcov is not None
-            info['res_var'] = np.sum((ydata-fun(xdata, *params))**2) / dof
-            if pcov is not None:
-                # multiply by residual variance because leastsq
-                # returns the reduced covariance matrix
-                info['cov'] = pcov * info['res_var']
-                std = np.array([np.sqrt(pcov[i][i]) for i in range(len(p0))])
-            else: std = np.array([np.inf] * len(p0))
-    elif not bounds and xerr is None:
+    if not xerr:
         info['method'] = 'curve_fit'
+        kwargs = {}
+        if bounds:
+            kwargs['bounds'] = bounds
+        else:
+            kwargs['full_output'] = True
         try:
-            params, pcov, fullout, msg, ier =\
-                opt.curve_fit(fun, xdata, ydata, p0,
-                            sigma=yerr, absolute_sigma=True,
-                            full_output=1)
+            res = opt.curve_fit(fun, xdata, ydata, p0,
+                                sigma=yerr, absolute_sigma=True,
+                                **kwargs)
         except RuntimeError as e:
             info['success'] = False
             info['message'] = str(e)
         else:
-            info['out'] = fullout
+            if len(res) == 2:
+                params, pcov = res
+                info['message'] = 'trf finished'
+            else:
+                params, pcov, fullout, msg, ier = res
+                info['out'] = fullout
+                info['message'] = msg
             info['success'] = not np.any(np.isinf(pcov))
-            info['message'] = msg
-            info['cov'] = pcov
             info['res_var'] = (np.sum((ydata-fun(xdata, *params))**2
                                       / yerr**2) / dof)
+            info['pcov'] = pcov
             std = np.array([np.sqrt(pcov[i][i]) for i in range(len(p0))])
     elif not bounds: # xerr and optional yerr
         info['method'] = 'odr'
@@ -161,36 +154,10 @@ def autofit(fun, xdata, ydata, p0,
         info['success'] = (1 <= out.info <= 3)
         info['message'] = out.stopreason
         info['res_var'] = out.res_var
-        info['cov'] = out.cov_beta
+        info['pcov'] = out.cov_beta
         info['out'] = out
         params = out.beta
         std = out.sd_beta
-    elif not xerr: # bounds and optional yerr
-        info['method'] = 'minimize'
-        # sum of squares of (weighted) residuals
-        if yerr is None:
-            def minim(params):
-                return np.sum((ydata-fun(xdata, *params))**2)
-        else:
-            def minim(params):
-                return np.sum((ydata-fun(xdata, *params))**2 / yerr**2)
-        # minimize
-        res = opt.minimize(minim, x0=p0, bounds=bounds)
-        params = res.x
-        info['success'] = res['success']
-        info['message'] = res['message']
-        info['out'] = res
-        # calc residual variance
-        if yerr is None:
-            res_var = np.sum((ydata-fun(xdata, *params))**2) / dof
-        else:
-            res_var = np.sum((ydata-fun(xdata, *params))**2 / yerr**2) / dof
-        info['res_var'] = res_var
-        # calc standard errors
-        hess_inv = res.hess_inv.todense()
-        pcov = res_var**2 * hess_inv
-        info['cov'] = pcov
-        std = np.array([np.sqrt(pcov[i][i]) for i in range(len(p0))])
     else:
         raise FitError("Fitting data with xerr and bounds not supported."
                        " Try inverse_fitquant().")

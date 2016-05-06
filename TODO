@@ -3,9 +3,6 @@
 
 * does quantities support ndarrays in UncertainQuantity?
 
-* standard errors of minimize algorithms
-  (see curve_fit implementation)
-
 ## fmt
 
 * consistent handling of 10000 and 9999.99 (automatic scaling of
@@ -17,20 +14,13 @@
 
 * plotting convenience function with DIN A4 size
 
-* helper function for plotting fit result?
+* helper function for plotting fit results?
 
 ## fit
 
 * inverse_fitquant
 
-* use scipy.optimize.least_squares instead of minimize with bounds?
-
-* extra file.py for test functions
+* extra python file for test functions
 
 * support passing a function for the Jacobian
 * support passing a tolerance for termination
-
-## doc
-
-* write TeX document with mathematical explanations for alorithms
-   (Hessian, Jacobian, chi2, chi2red, BFGS, LM, ...)
