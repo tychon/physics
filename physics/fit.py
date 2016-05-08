@@ -138,10 +138,13 @@ def autofit(fun, xdata, ydata, p0,
                 info['out'] = fullout
                 info['message'] = msg
             info['success'] = not np.any(np.isinf(pcov))
-            info['res_var'] = (np.sum((ydata-fun(xdata, *params))**2
-                                      / yerr**2) / dof)
+            if yerr is not None:
+                info['res_var'] = (np.sum((ydata-fun(xdata, *params))**2
+                                          / yerr**2) / dof)
+            else:
+                info['res_var'] = np.sum((ydata-fun(xdata, *params))**2) / dof
             info['pcov'] = pcov
-            std = np.array([np.sqrt(pcov[i][i]) for i in range(len(p0))])
+            std = np.sqrt(np.diag(pcov))
     elif bounds is None: # xerr and optional yerr
         info['method'] = 'odr'
         # change function signature

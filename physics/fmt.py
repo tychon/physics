@@ -372,7 +372,7 @@ def fmttable(columns, caption="", tableno=1,
     # data
     for rowi in range(rown):
         if index is not None:
-            s.write(repr(index[rowi]) + " & ")
+            s.write(str(index[rowi]) + " & ")
         s.write(" & ".join(fmtcols[coli][rowi] for coli in range(coln)))
         s.write(r" \\" + NL)
     # outro
