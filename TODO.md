@@ -5,6 +5,15 @@
 
 * write tests
 
+* container format (what about pandas)
+  for associating additional info / functionality with datasets:
+  * short and long names
+  * unit representation
+  * sorting by row
+  * filtering out rows with nans
+
+* add TexDocument class for printing many tables on one DIN A4 page
+
 ## fmt
 
 * consistent handling of 10000 and 9999.99 (automatic scaling of
