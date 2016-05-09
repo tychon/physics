@@ -328,10 +328,12 @@ def fmttable(columns, caption="", tableno=1,
     colN = coln+1 if index is not None else coln # and including index
     rown = max(len(col[1]) for col in columns)
     # create enumerating index or check given one
-    if index == []: index = range(1, rown+1)
-    if  index is not None and len(index) != rown:
-        raise ValueError("Index must have length %d,"
-                         " got %d"%(rown, len(index)))
+    if index is not None:
+        if len(index) == 0:
+            index = range(1, rown+1)
+        if len(index) != rown:
+            raise ValueError("Index must have length %d,"
+                             " got %d"%(rown, len(index)))
     # create right aligned column format or check given one
     if not columnformat:
         columnformat = 'r' * (colN)
