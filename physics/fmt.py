@@ -243,7 +243,7 @@ def comparequant(values1, values2,
             print(n.rjust(col0)+' | '+s1.rjust(col1)+' | '
                   +s2.rjust(col2)+' | '+s3.rjust(col3)+' \u03C3')
     else:
-        for s1, s2, s3 in zip(names, rows):
+        for s1, s2, s3 in rows:
             print(s1.rjust(col1)+' | '+s2.rjust(col2)
                   +' | '+s3.rjust(col3)+' \u03C3')
     return deviations
