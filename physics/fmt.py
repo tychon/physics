@@ -253,8 +253,8 @@ def fmttable(columns, caption="", tableno=1,
               (heading, values, uncert, decimals, power=0, significance=None),
               (heading, values, fun=None)
             ]
-        tableno: Numbering of table, defaults to 1.
         caption: Caption typesetted below table.
+        tableno: Numbering of table, defaults to 1.
         columnformat:  List of 'r', 'c' or 'l' giving the text alignment
             in the table cells for every column.  Don't forget alignment of
             index column if you didn't set it to None.  Defaults to all
