@@ -228,7 +228,7 @@ def comparequant(values1, values2,
         v2.rescale(v1.units)
         u12 = 0*v1.units if u1 is None else u1
         u22 = 0*v2.units if u2 is None else u2
-        dev = np.abs((v2 - v1)) / np.sqrt(u12**2 + u22**2)
+        dev = (np.abs((v2 - v1)) / np.sqrt(u12**2 + u22**2)).simplified
         deviations.append(dev)
         rows.append( (fmtquant(v1, u1), fmtquant(v2, u2), fmtquant(dev)) )
     if names is None:
