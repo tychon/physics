@@ -1,7 +1,7 @@
 
 __all__ = ['fmtuncert', 'fmtquant', 'fmtquant_vec',
-           'fmttable', 'printtable',
-           'printtex']
+           'comparequant',
+           'fmttable', 'printtable', 'showtable']
 
 import io
 import math
@@ -11,10 +11,17 @@ import quantities as pq
 import subprocess
 import os
 
-# for displaying images in jupyter
-import wand.image
-import IPython.display
-from wand.image import Image as WImage
+# Imports for displaying images in Jupyter.
+# We can't use MathJax, since it only supports math environments
+inlinetables = True
+try:
+  import wand.image
+  import IPython.display
+except ImportError:
+    inlinetables = False
+    import warnings
+    warnings.warn("The wand module could not be imported."
+                  " You won't see tables inlined in your notebook.")
 
 def _isnum(val):
     return type(val) == int \
@@ -34,7 +41,7 @@ def _isweird(val):
 logten = math.log(10.0)
 def fmtuncert(value, uncert=None,
               decimals=None, power=None, significance=None,
-              pm=' +- ', ten=' 10^', tex=False, paren=False,
+              pm=' +- ', ten=' 10**', tex=False, paren=False,
               nanempty=False):
     """Format integer / floating point values with uncertainty.
       Does not work with numpy arrays (use `numpy.vectorize`).
@@ -137,7 +144,7 @@ def fmtquant(quant, *args, **kwargs):
       arguments that fmtuncert takes.
 
       Additional arguments:
-        unit: Set True to append unit (will make parentheses around
+        units: Set True to append units (will make parentheses around
             values).  Formats as tex formula if `tex=True` is set.
             Defaults to True.
 
@@ -149,7 +156,7 @@ def fmtquant(quant, *args, **kwargs):
             have a built-in python number type.
     """
     tex = kwargs.get('tex', False)
-    unit = kwargs.pop('unit', True)
+    units = kwargs.pop('units', True)
     # value
     quant = 1.0 * quant
     if not _isquant(quant) and not _isnum(quant):
@@ -179,9 +186,9 @@ def fmtquant(quant, *args, **kwargs):
         uncert = None
     # fmt
     assert len(args) < 9, "`paren` can only be keyword argument."
-    paren = kwargs.pop('paren', False) or unit
+    paren = kwargs.pop('paren', False) or units
     s = fmtuncert(value, uncert, *args, paren=paren, **kwargs)
-    if unit and _isquant(quant) and quant.dimensionality != pq.dimensionless:
+    if units and _isquant(quant) and quant.dimensionality != pq.dimensionless:
         if tex: s = s + ' ' + quant.dimensionality.latex[1:-1]
         else: s = s + ' ' + repr(quant.units)[13:]
     return s
@@ -195,6 +202,51 @@ def fmtquant_vec(quants, uncerts, **kwargs):
     if not isinstance(quants, np.ndarray):
         uncerts = np.array([uncerts] * len(quants))
     return list(fmtquant(q, u) for q,u in zip(quants, uncerts))
+
+def comparequant(values1, values2,
+                 uncerts1=None, uncerts2=None,
+                 names=None):
+    """Print out values und deviations between them.
+
+      Arguments:
+        values1, values2: lists of quantities where each n-th element is
+            values1 has the same unit-dimension as in values2.
+        uncerts1, uncerts2: standard deviations for values1 and values2.
+            Default to zero when None.
+        names: optional list of names for each row.
+
+      Returns:
+        A list of (dimensionless) deviations.
+    """
+    if uncerts1 is None:
+        uncerts1 = [None]*len(values1)
+    if uncerts2 is None:
+        uncerts2 = [None]*len(values2)
+    deviations = []
+    rows = [] # formatted strings [(val1, val2, dev)]
+    for v1, v2, u1, u2 in zip(values1, values2, uncerts1, uncerts2):
+        v2.rescale(v1.units)
+        u12 = 0*v1.units if u1 is None else u1
+        u22 = 0*v2.units if u2 is None else u2
+        dev = np.abs((v2 - v1)) / np.sqrt(u12**2 + u22**2)
+        deviations.append(dev)
+        rows.append( (fmtquant(v1, u1), fmtquant(v2, u2), fmtquant(dev)) )
+    if names is None:
+        names = ['']*len(rows)
+    # maximum fmtd string lengths per column
+    col0 = max(len(name) for name in names)
+    col1 = max(len(s1) for s1, s2, s3 in rows)
+    col2 = max(len(s2) for s1, s2, s3 in rows)
+    col3 = max(len(s3) for s1, s2, s3 in rows)
+    if col0:
+        for n, (s1, s2, s3) in zip(names, rows):
+            print(n.rjust(col0)+' | '+s1.rjust(col1)+' | '
+                  +s2.rjust(col2)+' | '+s3.rjust(col3)+' \u03C3')
+    else:
+        for s1, s2, s3 in zip(names, rows):
+            print(s1.rjust(col1)+' | '+s2.rjust(col2)
+                  +' | '+s3.rjust(col3)+' \u03C3')
+    return deviations
 
 
 ################################################################################
@@ -276,10 +328,12 @@ def fmttable(columns, caption="", tableno=1,
     colN = coln+1 if index is not None else coln # and including index
     rown = max(len(col[1]) for col in columns)
     # create enumerating index or check given one
-    if index == []: index = range(1, rown+1)
-    if  index is not None and len(index) != rown:
-        raise ValueError("Index must have length %d,"
-                         " got %d"%(rown, len(index)))
+    if index is not None:
+        if len(index) == 0:
+            index = range(1, rown+1)
+        if len(index) != rown:
+            raise ValueError("Index must have length %d,"
+                             " got %d"%(rown, len(index)))
     # create right aligned column format or check given one
     if not columnformat:
         columnformat = 'r' * (colN)
@@ -320,7 +374,7 @@ def fmttable(columns, caption="", tableno=1,
     # data
     for rowi in range(rown):
         if index is not None:
-            s.write(repr(index[rowi]) + " & ")
+            s.write(str(index[rowi]) + " & ")
         s.write(" & ".join(fmtcols[coli][rowi] for coli in range(coln)))
         s.write(r" \\" + NL)
     # outro
@@ -334,14 +388,18 @@ def fmttable(columns, caption="", tableno=1,
     return s.getvalue()
 
 def printtable(columns, caption="", tableno=1, name=None,
-                columnformat=None, index=[]):
-    """Shorthand for formatting and printing table.
+               columnformat=None, index=[],
+               margins=[10, 10, 10, 10], keepcropped=False):
+    """Shorthand for formatting and printing table.  See documentation of
+      `fmttable()`, `printtex()` and `showtable()`.
+
       `name` defaults to 'tableTABLENO.pdf'.
     """
     tab = fmttable(columns, caption, tableno, columnformat, index)
     if name is None: name = "table{}".format(tableno)
-    printtex(name, tab)
-    showtable(name)
+    if not printtex(name, tab):
+        return name
+    showtable(name, margins, keepcropped)
     return name
 
 def printtex(name, tex):
@@ -385,7 +443,8 @@ def printtex(name, tex):
         os.unlink(name+'.aux')
         return True
 
-def showtable(name, margins=[10, 10, 10, 10]):
+def showtable(name, margins=[10, 10, 10, 10],
+              keepcropped=False):
     """Crop the pages of a PDF file, then load it using ImageMagick
       (python wand) and display it in IPython / Jupyter.
 
@@ -395,6 +454,8 @@ def showtable(name, margins=[10, 10, 10, 10]):
         margins: A list or tuple of four integers giving the margins around the
             text in points ('pt').
     """
+    if not keepcropped and not inlinetables:
+        return # Nothing to do
     pdffile = name + '.pdf'
     cropfile = name + '.cropped.pdf'
     margins = ' '.join(str(m) for m in margins)
@@ -407,6 +468,9 @@ def showtable(name, margins=[10, 10, 10, 10]):
     res = proc.returncode
     if res != 0:
         print("Cropping failed, return code: %d"%res)
-    else:
+        return
+    if inlinetables:
         with wand.image.Image(filename=cropfile) as img:
             IPython.display.display(img)
+    if not keepcropped:
+        os.unlink(cropfile)
