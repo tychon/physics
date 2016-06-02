@@ -243,7 +243,7 @@ def comparequant(values1, values2,
             print(n.rjust(col0)+' | '+s1.rjust(col1)+' | '
                   +s2.rjust(col2)+' | '+s3.rjust(col3)+' \u03C3')
     else:
-        for s1, s2, s3 in zip(names, rows):
+        for s1, s2, s3 in rows:
             print(s1.rjust(col1)+' | '+s2.rjust(col2)
                   +' | '+s3.rjust(col3)+' \u03C3')
     return deviations
@@ -305,8 +305,8 @@ def fmttable(columns, caption="", tableno=1,
               (heading, values, uncert, decimals, power=0, significance=None),
               (heading, values, fun=None)
             ]
-        tableno: Numbering of table, defaults to 1.
         caption: Caption typesetted below table.
+        tableno: Numbering of table, defaults to 1.
         columnformat:  List of 'r', 'c' or 'l' giving the text alignment
             in the table cells for every column.  Don't forget alignment of
             index column if you didn't set it to None.  Defaults to all
