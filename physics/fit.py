@@ -162,11 +162,17 @@ def autofit(fun, xdata, ydata, p0,
         info['pcov'] = out.cov_beta
         info['out'] = out
         params = out.beta
-        std = out.sd_beta
+        # out.sd_beta seem not to scale with given errors, so we calculate
+        # the errors by hand according to the ODRPACK implementors formula
+        # http://www.mechanicalkern.com/static/odr_vcv.pdf (page 6).
+        # Percentage point of t-distribution for 1sigma confidence interval:
+        tppf = stats.t.ppf(1-(1-0.683)/2, dof)
+        std = list(np.sqrt(info['pcov'][i][i])*tppf for i in range(len(p0)))
     else:
         raise FitError("Fitting data with xerr and bounds not supported."
                        " Try inverse_fitquant().")
     if 'res_var' in info:
+        # chi2 = chi2red * dof where chi2red = res_var
         info['probability'] = 1 - stats.chi2.cdf(info['res_var']*dof, dof)
     return params, std, info
 
