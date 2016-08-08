@@ -337,8 +337,9 @@ def fmttable(columns, caption="", tableno=1,
     # create right aligned column format or check given one
     if not columnformat:
         columnformat = 'r' * (colN)
-    if len(columnformat) != colN:
-        raise ValueError("`columnformat` must have length %d,"
+    # Format characters like '|' may make the string longer
+    if len(columnformat) < colN:
+        raise ValueError("`columnformat` must have at least length %d,"
                          " got %d"%(colN, len(columnformat)))
 
     # format cells to strings
