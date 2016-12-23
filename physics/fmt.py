@@ -390,6 +390,7 @@ def fmttable(columns, caption="", tableno=1,
 
 def printtable(columns, caption="", tableno=1, name=None,
                columnformat=None, index=[],
+               documentargs=[], prelude="",
                margins=[10, 10, 10, 10], keepcropped=False):
     """Shorthand for formatting and printing table.  See documentation of
       `fmttable()`, `printtex()` and `showtable()`.
@@ -398,12 +399,12 @@ def printtable(columns, caption="", tableno=1, name=None,
     """
     tab = fmttable(columns, caption, tableno, columnformat, index)
     if name is None: name = "table{}".format(tableno)
-    if not printtex(name, tab):
+    if not printtex(name, tab, documentargs, prelude):
         return name
     showtable(name, margins, keepcropped)
     return name
 
-def printtex(name, tex):
+def printtex(name, tex, documentargs=[], prelude=""):
     """Put tex into file surrounded by some document definitions.
       Then compile it using pdflatex.  Deletes intermediary files
       when compilation was successful.
@@ -413,20 +414,31 @@ def printtex(name, tex):
           Files with extensions `.tex, .log, .aux, .pdf` are
           created / used.
         tex: The tex as string.
+        documentargs:
+          Tex arguments for srartcl document class.
+        prelude:
+          Tex included before `\begin{document}`
 
       Returns: True if compilation completed successfully.
     """
     texfile = name + '.tex'
     pdffile = name + '.pdf'
+    if all('paper' not in a for a in documentargs):
+        documentargs.insert(0, 'a4paper')
+    documentargs = ','.join(documentargs)
     # write file
     with open(texfile, 'w+') as f:
         NL = '\n'
         f.write(r"""
-\documentclass[a4paper]{scrartcl}
+\documentclass[%s]{scrartcl}
+\usepackage[utf8]{inputenc}
 \usepackage{microtype, lmodern, ngerman}
 \usepackage{amsmath, esvect, booktabs, threeparttable}
+
+%s
+
 \begin{document}
-\pagestyle{empty}"""+NL)
+\pagestyle{empty}"""%(documentargs, prelude)+NL)
         f.write(tex)
         f.write(NL+r"\end{document}"+NL)
 
