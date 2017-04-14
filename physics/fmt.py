@@ -444,7 +444,7 @@ def printtex(name, tex, documentargs=[], prelude=""):
 
     # compile tex
     print("Compiling to "+pdffile)
-    proc = subprocess.Popen(['pdflatex', texfile])
+    proc = subprocess.Popen(['xelatex', '-halt-on-error', texfile])
     proc.communicate()
     res = proc.returncode
     if res != 0:
