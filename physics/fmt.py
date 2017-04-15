@@ -294,7 +294,7 @@ def _fmt_number_column(info, nanempty,
         col.append('$' + f + '$')
     return col
 
-def fmttable(columns, caption="", tableno=1,
+def fmttable(columns, caption="", tableno=None,
              columnformat=None, index=[],
              nanempty=True, info=True):
     """Format data as tex threeparttable.
@@ -306,7 +306,8 @@ def fmttable(columns, caption="", tableno=1,
               (heading, values, fun=None)
             ]
         caption: Caption typesetted below table.
-        tableno: Numbering of table, defaults to 1.
+        tableno: Numbering of table, defaults to None.
+            Set to None to skip setting counter.
         columnformat:  List of 'r', 'c' or 'l' giving the text alignment
             in the table cells for every column.  Don't forget alignment of
             index column if you didn't set it to None.  Defaults to all
@@ -359,14 +360,17 @@ def fmttable(columns, caption="", tableno=1,
     # build string
     NL = '\n'
     s = io.StringIO()
-    s.write(r"""
+    if tableno is not None:
+        s.write(r"""
 \setcounter{table}{%d}
+"""%(tableno-1))
+    s.write(r"""
 \begin{table}
 \centering
 \begin{threeparttable}
 \begin{tabular}{%s}
 \toprule
-"""%(tableno-1, columnformat))
+"""%columnformat)
     # header
     headings = [a[0] for a in columns]
     if index is not None:
@@ -388,7 +392,7 @@ def fmttable(columns, caption="", tableno=1,
 """%(caption))
     return s.getvalue()
 
-def printtable(columns, caption="", tableno=1, name=None,
+def printtable(columns, caption="", tableno=None, name=None,
                columnformat=None, index=[],
                documentargs=[], prelude="",
                margins=[10, 10, 10, 10], keepcropped=False):
