@@ -395,14 +395,19 @@ def fmttable(columns, caption="", tableno=None,
 def printtable(columns, caption="", tableno=None, name=None,
                columnformat=None, index=[],
                documentargs=[], prelude="",
-               margins=[10, 10, 10, 10], keepcropped=False):
+               margins=[10, 10, 10, 10],
+               savetex=None,
+               keepcropped=False):
     """Shorthand for formatting and printing table.  See documentation of
       `fmttable()`, `printtex()` and `showtable()`.
 
       `name` defaults to 'tableTABLENO.pdf'.
     """
     tab = fmttable(columns, caption, tableno, columnformat, index)
-    if name is None: name = "table{}".format(tableno)
+    if savetex:
+        with open(savetex, 'w+') as f:
+            f.write(tab)
+    if name is None: name = "table{}".format(repr(tableno))
     if not printtex(name, tab, documentargs, prelude):
         return name
     showtable(name, margins, keepcropped)
